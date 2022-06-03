@@ -1,7 +1,9 @@
 # https://github.com/sivel/speedtest-cli
+import time
 from datetime import datetime
 
 import pandas as pd
+import schedule
 import speedtest as st
 
 
@@ -19,8 +21,8 @@ def get_new_speeds():
     sponsor = speed_test.results.server["sponsor"]
 
     # Convert download and upload speeds to megabits per second
-    download_mbs = round(download / (10 ** 6), 2)
-    upload_mbs = round(upload / (10 ** 6), 2)
+    download_mbs = round(download / (10**6), 2)
+    upload_mbs = round(upload / (10**6), 2)
 
     return (ping, download_mbs, upload_mbs, host, location, sponsor)
 
@@ -30,7 +32,7 @@ def update_csv(internet_speeds):
     # date_today = datetime.today().strftime("%m/%d/%Y")
     date_today = datetime.today().strftime("%d/%m/%Y %H:%M:%S")
     # File with the dataset
-    csv_file_name = "internet_speeds_dataset.csv"
+    csv_file_name = "wlan_speedtest.csv"
 
     # Load the CSV to update
     try:
@@ -68,9 +70,17 @@ def update_csv(internet_speeds):
     updated_df = csv_dataset.append(results_df, sort=False)
     # https://stackoverflow.com/a/34297689/9263761
     updated_df.loc[~updated_df.index.duplicated(keep="all")].to_csv(
-        csv_file_name, index_label="Datum und Uhrzeit"
+        csv_file_name, sep="|", mode="a", index_label="Header: Datum und Uhrzeit"
     )
 
 
-new_speeds = get_new_speeds()
-update_csv(new_speeds)
+def main():
+    new_speeds = get_new_speeds()
+    update_csv(new_speeds)
+
+
+schedule.every(2).hours.do(main)
+
+while True:
+    schedule.run_pending()
+    time.sleep(10)
